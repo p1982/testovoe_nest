@@ -1,0 +1,370 @@
+{
+  "info": {
+    "name": "NestJS Context App - API Collection",
+    "description": "Postman collection for testing the NestJS application with request context and cron job functionality",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string",
+      "description": "Base URL for the NestJS application"
+    },
+    {
+      "key": "environment",
+      "value": "development",
+      "type": "string",
+      "description": "Current environment"
+    }
+  ],
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Add timestamp to request headers for context tracking",
+          "pm.request.headers.add({",
+          "    key: 'X-Request-Timestamp',",
+          "    value: new Date().toISOString()",
+          "});",
+          "",
+          "// Add request ID for tracking",
+          "pm.request.headers.add({",
+          "    key: 'X-Request-ID',",
+          "    value: '{{$guid}}',",
+          "});"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Test response status",
+          "pm.test('Response status is 200', function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "// Test response time",
+          "pm.test('Response time is less than 1000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+          "});",
+          "",
+          "// Test response has required fields based on endpoint",
+          "if (pm.response.code === 200) {",
+          "    const responseJson = pm.response.json();",
+          "    const requestUrl = pm.request.url.getPath();",
+          "    ",
+          "    if (requestUrl === '/health') {",
+          "        // Health check endpoint tests",
+          "        pm.test('Health response has status field', function () {",
+          "            pm.expect(responseJson).to.have.property('status');",
+          "        });",
+          "        ",
+          "        pm.test('Health status is healthy', function () {",
+          "            pm.expect(responseJson.status).to.equal('healthy');",
+          "        });",
+          "        ",
+          "        pm.test('Health response has timestamp field', function () {",
+          "            pm.expect(responseJson).to.have.property('timestamp');",
+          "        });",
+          "        ",
+          "        pm.test('Health response has uptime field', function () {",
+          "            pm.expect(responseJson).to.have.property('uptime');",
+          "        });",
+          "        ",
+          "        pm.test('Health response has memory information', function () {",
+          "            pm.expect(responseJson).to.have.property('memory');",
+          "            pm.expect(responseJson.memory).to.have.property('used');",
+          "            pm.expect(responseJson.memory).to.have.property('total');",
+          "            pm.expect(responseJson.memory).to.have.property('free');",
+          "            pm.expect(responseJson.memory).to.have.property('external');",
+          "        });",
+          "        ",
+          "        pm.test('Health response has system information', function () {",
+          "            pm.expect(responseJson).to.have.property('system');",
+          "            pm.expect(responseJson.system).to.have.property('platform');",
+          "            pm.expect(responseJson.system).to.have.property('nodeVersion');",
+          "            pm.expect(responseJson.system).to.have.property('pid');",
+          "            pm.expect(responseJson.system).to.have.property('cpuUsage');",
+          "        });",
+          "        ",
+          "        pm.test('Health response has context information', function () {",
+          "            pm.expect(responseJson).to.have.property('context');",
+          "            pm.expect(responseJson.context).to.have.property('active');",
+          "        });",
+          "        ",
+          "        pm.test('Uptime is a positive number', function () {",
+          "            pm.expect(responseJson.uptime).to.be.above(0);",
+          "        });",
+          "        ",
+          "        pm.test('Memory values are positive numbers', function () {",
+          "            pm.expect(responseJson.memory.used).to.be.above(0);",
+          "            pm.expect(responseJson.memory.total).to.be.above(0);",
+          "            pm.expect(responseJson.memory.free).to.be.above(0);",
+          "        });",
+          "        ",
+          "        pm.test('System PID is a positive number', function () {",
+          "            pm.expect(responseJson.system.pid).to.be.above(0);",
+          "        });",
+          "    } else if (requestUrl === '/') {",
+          "        // Main execution ID endpoint tests",
+          "        pm.test('Response has executionId field', function () {",
+          "            pm.expect(responseJson).to.have.property('executionId');",
+          "        });",
+          "        ",
+          "        pm.test('Execution ID is a string', function () {",
+          "            pm.expect(responseJson.executionId).to.be.a('string');",
+          "        });",
+          "        ",
+          "        pm.test('Execution ID is not empty', function () {",
+          "            pm.expect(responseJson.executionId).to.not.be.empty;",
+          "        });",
+          "    }",
+          "}",
+          "",
+          "// Log response details",
+          "console.log('Response Status:', pm.response.status);",
+          "console.log('Response Time:', pm.response.responseTime + 'ms');",
+          "if (pm.response.code === 200) {",
+          "    const responseJson = pm.response.json();",
+          "    const requestUrl = pm.request.url.getPath();",
+          "    ",
+          "    if (requestUrl === '/health') {",
+          "        console.log('Health Status:', responseJson.status);",
+          "        console.log('Uptime:', responseJson.uptime + 's');",
+          "        console.log('Memory Used:', responseJson.memory.used + 'MB');",
+          "        console.log('Memory Total:', responseJson.memory.total + 'MB');",
+          "        console.log('Memory Free:', responseJson.memory.free + 'MB');",
+          "        console.log('Memory External:', responseJson.memory.external + 'MB');",
+          "        console.log('Platform:', responseJson.system.platform);",
+          "        console.log('Node Version:', responseJson.system.nodeVersion);",
+          "        console.log('PID:', responseJson.system.pid);",
+          "        console.log('CPU Usage:', responseJson.system.cpuUsage + 'ms');",
+          "        console.log('Context Active:', responseJson.context.active);",
+          "        if (responseJson.context.executionId) {",
+          "            console.log('Context Execution ID:', responseJson.context.executionId);",
+          "        }",
+          "    } else if (requestUrl === '/') {",
+          "        console.log('Execution ID:', responseJson.executionId);",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check & Execution ID",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "Accept JSON response"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.32.3",
+                "description": "Postman user agent"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Get comprehensive health information about the application including status, uptime, and memory usage"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Execution ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json",
+                "description": "Accept JSON response"
+              },
+              {
+                "key": "User-Agent",
+                "value": "PostmanRuntime/7.32.3",
+                "description": "Postman user agent"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Get the execution ID for the current request context"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Execution ID (with custom headers)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Custom-Header",
+                "value": "test-value",
+                "description": "Custom header for testing context"
+              },
+              {
+                "key": "X-User-ID",
+                "value": "user-123",
+                "description": "User ID for context tracking"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Get execution ID with custom headers to test context handling"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for checking application health and getting execution IDs"
+    },
+    {
+      "name": "Environment & Configuration",
+      "item": [
+        {
+          "name": "Check Environment Variables",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Check if environment variables are properly configured by examining the response"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for checking environment configuration"
+    },
+    {
+      "name": "Performance Testing",
+      "item": [
+        {
+          "name": "Concurrent Requests Test",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Use this endpoint for testing concurrent request handling and context isolation"
+          },
+          "response": []
+        },
+        {
+          "name": "Request with Delay",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Test request context timeout handling"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for performance and stress testing"
+    },
+    {
+      "name": "Error Handling",
+      "item": [
+        {
+          "name": "Invalid Endpoint (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invalid-endpoint",
+              "host": ["{{baseUrl}}"],
+              "path": ["invalid-endpoint"]
+            },
+            "description": "Test 404 error handling"
+          },
+          "response": []
+        },
+        {
+          "name": "Method Not Allowed (405)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"test\": \"data\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            },
+            "description": "Test 405 Method Not Allowed error handling"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for testing error handling scenarios"
+    }
+  ]
+} 

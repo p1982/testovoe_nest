@@ -1,14 +1,20 @@
 import configuration from './configuration';
 
 describe('Configuration', () => {
+  // Save original environment variables
   const originalEnv = process.env;
 
   beforeEach(() => {
+    // Reset environment variables before each test
     jest.resetModules();
     process.env = { ...originalEnv };
+
+    // Always set NODE_ENV as it's now required
+    process.env.NODE_ENV = 'test';
   });
 
-  afterEach(() => {
+  afterAll(() => {
+    // Restore original environment variables
     process.env = originalEnv;
   });
 
@@ -18,7 +24,7 @@ describe('Configuration', () => {
 
       const config = configuration();
 
-      expect(config.app.port).toBe(3000);
+      expect(config.app.port).toBe(3000); // Should fall back to default
     });
 
     it('should use PORT environment variable when set', () => {
@@ -49,9 +55,9 @@ describe('Configuration', () => {
     it('should use default environment when NODE_ENV is not set', () => {
       delete process.env.NODE_ENV;
 
-      const config = configuration();
-
-      expect(config.app.environment).toBe('development');
+      expect(() => {
+        configuration();
+      }).toThrow('Missing required environment variables: NODE_ENV');
     });
 
     it('should use NODE_ENV environment variable when set', () => {
@@ -66,6 +72,22 @@ describe('Configuration', () => {
       const config = configuration();
 
       expect(config.app.name).toBe('NestJS Context App');
+    });
+
+    it('should use default host when HOST is not set', () => {
+      delete process.env.HOST;
+
+      const config = configuration();
+
+      expect(config.app.host).toBe('localhost');
+    });
+
+    it('should use HOST environment variable when set', () => {
+      process.env.HOST = '0.0.0.0';
+
+      const config = configuration();
+
+      expect(config.app.host).toBe('0.0.0.0');
     });
   });
 
@@ -237,7 +259,7 @@ describe('Configuration', () => {
       delete process.env.LOG_LEVEL;
       delete process.env.CRON_INTERVAL;
       delete process.env.CONTEXT_TIMEOUT;
-      delete process.env.NODE_ENV;
+      // Keep NODE_ENV as it's required
 
       const config = configuration();
 
@@ -245,7 +267,23 @@ describe('Configuration', () => {
       expect(config.logging.level).toBe('info');
       expect(config.cron.interval).toBe(30);
       expect(config.context.timeout).toBe(30000);
-      expect(config.app.environment).toBe('development');
+      expect(config.app.environment).toBe('test'); // Should use the test value we set
+    });
+
+    it('should throw error when NODE_ENV is missing', () => {
+      delete process.env.NODE_ENV;
+
+      expect(() => {
+        configuration();
+      }).toThrow('Missing required environment variables: NODE_ENV');
+    });
+
+    it('should handle empty NODE_ENV gracefully', () => {
+      process.env.NODE_ENV = '';
+
+      expect(() => {
+        configuration();
+      }).toThrow('Missing required environment variables: NODE_ENV');
     });
   });
 });

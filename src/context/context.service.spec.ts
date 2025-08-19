@@ -15,7 +15,13 @@ describe('ContextService', () => {
 
   afterEach(() => {
     // Clean up any context that might have been set
-    service.setContext({ executionId: 'cleanup' });
+    // Don't call clearContext as it can cause errors in tests
+    try {
+      // Just reset the context by setting a new one
+      service.setContext({ executionId: 'cleanup' });
+    } catch (error) {
+      // Ignore cleanup errors
+    }
   });
 
   it('should be defined', () => {
@@ -143,6 +149,88 @@ describe('ContextService', () => {
 
       expect(execution1Id).toBe('isolated-id-1');
       expect(execution2Id).toBe('isolated-id-2');
+    });
+  });
+
+  describe('isContextActive', () => {
+    it('should return false when no context is set', () => {
+      expect(service.isContextActive()).toBe(false);
+    });
+
+    it('should return true when context is active', () => {
+      const context: RequestContext = { executionId: 'test-id' };
+      service.setContext(context);
+      expect(service.isContextActive()).toBe(true);
+    });
+
+    it('should return false after context is cleared', () => {
+      const context: RequestContext = { executionId: 'test-id' };
+      service.setContext(context);
+      expect(service.isContextActive()).toBe(true);
+
+      service.clearContext();
+      expect(service.isContextActive()).toBe(false);
+    });
+  });
+
+  describe('clearContext', () => {
+    it('should return false when no context to clear', () => {
+      expect(service.clearContext()).toBe(false);
+    });
+
+    it('should return true when context is cleared', () => {
+      const context: RequestContext = { executionId: 'test-id' };
+      service.setContext(context);
+      expect(service.isContextActive()).toBe(true);
+
+      const result = service.clearContext();
+      expect(result).toBe(true);
+      expect(service.isContextActive()).toBe(false);
+    });
+  });
+
+  describe('error handling', () => {
+    it('should throw error when setting invalid context', () => {
+      expect(() => {
+        service.setContext(null as any);
+      }).toThrow('Invalid context: executionId is required');
+
+      expect(() => {
+        service.setContext({} as any);
+      }).toThrow('Invalid context: executionId is required');
+
+      expect(() => {
+        service.setContext({ executionId: '' } as any);
+      }).toThrow('Invalid context: executionId is required');
+    });
+
+    it('should throw error when running with invalid context', () => {
+      expect(() => {
+        service.runWithContext(null as any, () => 'test');
+      }).toThrow('Invalid context: executionId is required');
+
+      expect(() => {
+        service.runWithContext({} as any, () => 'test');
+      }).toThrow('Invalid context: executionId is required');
+    });
+
+    it('should handle AsyncLocalStorage errors gracefully', () => {
+      // Mock AsyncLocalStorage to throw an error
+      const mockAls = {
+        enterWith: jest.fn().mockImplementation(() => {
+          throw new Error('ALS error');
+        }),
+        getStore: jest.fn(),
+        run: jest.fn(),
+        disable: jest.fn(),
+      };
+
+      // Replace the private als property for testing
+      (service as any).als = mockAls;
+
+      expect(() => {
+        service.setContext({ executionId: 'test-id' });
+      }).toThrow('ALS error');
     });
   });
 });

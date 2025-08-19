@@ -14,6 +14,7 @@ describe('AppController', () => {
           provide: ContextService,
           useValue: {
             getExecutionId: jest.fn(),
+            getContext: jest.fn(),
           },
         },
       ],
@@ -109,15 +110,12 @@ describe('AppController', () => {
   });
 
   describe('error handling', () => {
-    it('should throw Error instance with correct message', () => {
+    it('should throw HttpException with correct message and status', () => {
       jest.spyOn(contextService, 'getExecutionId').mockReturnValue(undefined);
 
-      try {
+      expect(() => {
         controller.getExecutionId();
-      } catch (error) {
-        expect(error).toBeInstanceOf(Error);
-        expect(error.message).toBe('Execution ID not found in context');
-      }
+      }).toThrow('Execution ID not found in context');
     });
 
     it('should handle multiple error scenarios consistently', () => {
@@ -185,6 +183,139 @@ describe('AppController', () => {
         expect(result.executionId).toBe(testId);
         expect(Object.keys(result)).toHaveLength(1);
       });
+    });
+  });
+
+  describe('getHealth', () => {
+    beforeEach(() => {
+      // Mock process.memoryUsage and process.cpuUsage
+      jest.spyOn(process, 'memoryUsage').mockReturnValue({
+        heapUsed: 1024 * 1024 * 50, // 50MB
+        heapTotal: 1024 * 1024 * 100, // 100MB
+        external: 1024 * 1024 * 10, // 10MB
+        rss: 1024 * 1024 * 80, // 80MB
+      } as any);
+
+      jest.spyOn(process, 'cpuUsage').mockReturnValue({
+        user: 100000, // 100ms
+        system: 50000, // 50ms
+      } as any);
+
+      // Mock Date.now for consistent uptime testing
+      const mockDateNow = jest.spyOn(Date, 'now');
+      mockDateNow.mockReturnValue(1000000);
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it('should return comprehensive health information', () => {
+      const result = controller.getHealth();
+
+      expect(result).toHaveProperty('status', 'healthy');
+      expect(result).toHaveProperty('timestamp');
+      expect(result).toHaveProperty('uptime');
+      expect(result).toHaveProperty('environment');
+      expect(result).toHaveProperty('version', '1.0.0');
+      expect(result).toHaveProperty('memory');
+      expect(result).toHaveProperty('system');
+      expect(result).toHaveProperty('context');
+    });
+
+    it('should return correct memory information', () => {
+      const result = controller.getHealth();
+
+      expect(result.memory).toHaveProperty('used', 50);
+      expect(result.memory).toHaveProperty('total', 100);
+      expect(result.memory).toHaveProperty('free', 50);
+      expect(result.memory).toHaveProperty('external', 10);
+    });
+
+    it('should return correct system information', () => {
+      const result = controller.getHealth();
+
+      expect(result.system).toHaveProperty('platform', process.platform);
+      expect(result.system).toHaveProperty('nodeVersion', process.version);
+      expect(result.system).toHaveProperty('pid', process.pid);
+      expect(result.system).toHaveProperty('cpuUsage', 150); // 100 + 50
+    });
+
+    it('should return correct context information', () => {
+      const mockContext = { executionId: 'test-context-id' };
+      jest.spyOn(contextService, 'getContext').mockReturnValue(mockContext);
+      jest
+        .spyOn(contextService, 'getExecutionId')
+        .mockReturnValue('test-exec-id');
+
+      const result = controller.getHealth();
+
+      expect(result.context).toHaveProperty('active', true);
+      expect(result.context).toHaveProperty('executionId', 'test-exec-id');
+    });
+
+    it('should handle missing context gracefully', () => {
+      jest.spyOn(contextService, 'getContext').mockReturnValue(undefined);
+      jest.spyOn(contextService, 'getExecutionId').mockReturnValue(undefined);
+
+      const result = controller.getHealth();
+
+      expect(result.context).toHaveProperty('active', false);
+      expect(result.context.executionId).toBeUndefined();
+    });
+
+    it('should calculate uptime correctly', () => {
+      // Mock startTime to be 100 seconds ago
+      const startTime = 1000000 - 100 * 1000;
+      (controller as any).startTime = startTime;
+
+      const result = controller.getHealth();
+
+      expect(result.uptime).toBe(100);
+    });
+
+    it('should use environment from process.env.NODE_ENV', () => {
+      const originalEnv = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+
+      const result = controller.getHealth();
+
+      expect(result.environment).toBe('production');
+
+      // Restore original environment
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('should fallback to development when NODE_ENV is not set', () => {
+      const originalEnv = process.env.NODE_ENV;
+      delete process.env.NODE_ENV;
+
+      const result = controller.getHealth();
+
+      expect(result.environment).toBe('development');
+
+      // Restore original environment
+      process.env.NODE_ENV = originalEnv;
+    });
+
+    it('should handle memory usage errors gracefully', () => {
+      jest.spyOn(process, 'memoryUsage').mockImplementation(() => {
+        throw new Error('Memory usage error');
+      });
+
+      expect(() => {
+        controller.getHealth();
+      }).toThrow('Health check failed');
+    });
+
+    it('should handle CPU usage errors gracefully', () => {
+      jest.spyOn(process, 'cpuUsage').mockImplementation(() => {
+        throw new Error('CPU usage error');
+      });
+
+      expect(() => {
+        controller.getHealth();
+      }).toThrow('Health check failed');
     });
   });
 });

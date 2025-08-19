@@ -181,9 +181,93 @@ describe('CronService', () => {
         throw error;
       });
 
+      // The service now catches errors and logs them, so it shouldn't throw
       expect(() => {
         service.handleCronJob();
-      }).toThrow('Context execution error');
+      }).not.toThrow();
+    });
+
+    it('should log performance warning when execution time exceeds threshold', () => {
+      // Mock configuration
+      jest.spyOn(configService, 'get').mockImplementation((key: string) => {
+        if (key === 'cron.enabled') return true;
+        if (key === 'cron.interval') return 30;
+        if (key === 'cron.timezone') return 'UTC';
+        return undefined;
+      });
+
+      // Mock Date.now to control execution time
+      const originalDateNow = Date.now;
+      let callCount = 0;
+      Date.now = jest.fn(() => {
+        callCount++;
+        // Return different times to simulate execution time
+        if (callCount === 1) return 1000; // Start time
+        if (callCount === 2) return 2001; // End time (> 1000ms threshold)
+        return 1000;
+      });
+
+      jest
+        .spyOn(contextService, 'runWithContext')
+        .mockImplementation((context, fn) => {
+          return fn();
+        });
+
+      jest
+        .spyOn(contextService, 'getExecutionId')
+        .mockReturnValue('test-uuid-12345');
+
+      const loggerSpy = jest.spyOn(service['logger'], 'warn');
+
+      service.handleCronJob();
+
+      // Should log a warning about execution time
+      expect(loggerSpy).toHaveBeenCalledWith(
+        'Cron job execution time exceeded threshold',
+        expect.objectContaining({
+          executionId: 'test-uuid-12345',
+          executionTimeMs: expect.any(Number),
+          thresholdMs: 1000,
+        }),
+      );
+
+      // Restore original Date.now
+      Date.now = originalDateNow;
+    });
+
+    it('should include memory usage in successful execution logs', () => {
+      // Mock configuration
+      jest.spyOn(configService, 'get').mockImplementation((key: string) => {
+        if (key === 'cron.enabled') return true;
+        if (key === 'cron.interval') return 30;
+        if (key === 'cron.timezone') return 'UTC';
+        return undefined;
+      });
+
+      jest
+        .spyOn(contextService, 'runWithContext')
+        .mockImplementation((context, fn) => fn());
+      jest
+        .spyOn(contextService, 'getExecutionId')
+        .mockReturnValue('test-uuid-12345');
+
+      const loggerSpy = jest.spyOn(service['logger'], 'log');
+
+      service.handleCronJob();
+
+      // Should log success with memory usage
+      expect(loggerSpy).toHaveBeenCalledWith(
+        'Cron job executed successfully',
+        expect.objectContaining({
+          executionId: 'test-uuid-12345',
+          memoryUsage: expect.objectContaining({
+            heapUsed: expect.any(Number),
+            heapTotal: expect.any(Number),
+            external: expect.any(Number),
+            rss: expect.any(Number),
+          }),
+        }),
+      );
     });
   });
 
@@ -194,6 +278,7 @@ describe('CronService', () => {
         .mockImplementation((key: string) => {
           if (key === 'cron.enabled') return true;
           if (key === 'cron.interval') return 45;
+          if (key === 'cron.timezone') return 'UTC';
           return undefined;
         });
 
@@ -206,9 +291,11 @@ describe('CronService', () => {
 
       service.handleCronJob();
 
-      expect(getSpy).toHaveBeenCalledTimes(2);
+      // Now we expect 3 calls: enabled, interval, and timezone
+      expect(getSpy).toHaveBeenCalledTimes(3);
       expect(getSpy).toHaveBeenNthCalledWith(1, 'cron.enabled');
       expect(getSpy).toHaveBeenNthCalledWith(2, 'cron.interval');
+      expect(getSpy).toHaveBeenNthCalledWith(3, 'cron.timezone');
     });
   });
 });

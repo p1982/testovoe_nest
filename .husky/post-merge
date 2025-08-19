@@ -1,0 +1,20 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🔄 Post-merge cleanup..."
+
+# Check if package-lock.json was updated
+if git diff --name-only HEAD@{1} HEAD | grep -q "package-lock.json"; then
+    echo "📦 Dependencies were updated, running npm install..."
+    npm install
+fi
+
+# Clean up any temporary files
+echo "🧹 Cleaning up temporary files..."
+npm run clean 2>/dev/null || true
+
+# Run security audit
+echo "🔒 Running security audit..."
+npm audit --audit-level=moderate || true
+
+echo "✅ Post-merge cleanup completed!" 

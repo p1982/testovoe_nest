@@ -20,10 +20,10 @@ export class ContextMiddleware implements NestMiddleware {
     // Генеруємо унікальний ідентифікатор виконання для запиту
     const executionId = uuidv4();
     const context: RequestContext = { executionId };
-    
+
     // Виконуємо наступний middleware в контексті запиту
     this.contextService.runWithContext(context, () => {
       next();
     });
   }
-} 
+}

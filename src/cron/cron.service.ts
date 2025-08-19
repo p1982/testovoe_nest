@@ -34,12 +34,14 @@ export class CronService {
     // Генеруємо унікальний ідентифікатор виконання для cron завдання
     const executionId = uuidv4();
     const context: RequestContext = { executionId };
-    
+
     // Виконуємо завдання в контексті з ідентифікатором виконання
     this.contextService.runWithContext(context, () => {
       const retrievedExecutionId = this.contextService.getExecutionId();
       const interval = this.configService.get<number>('cron.interval');
-      this.logger.log(`Cron job executed with execution ID: ${retrievedExecutionId} (interval: ${interval} min)`);
+      this.logger.log(
+        `Cron job executed with execution ID: ${retrievedExecutionId} (interval: ${interval} min)`,
+      );
     });
   }
-} 
+}

@@ -10,4 +10,4 @@ import { ContextMiddleware } from './context.middleware';
   providers: [ContextService, ContextMiddleware],
   exports: [ContextService],
 })
-export class ContextModule {} 
+export class ContextModule {}

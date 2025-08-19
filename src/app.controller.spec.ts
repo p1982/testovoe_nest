@@ -34,7 +34,9 @@ describe('AppController', () => {
   describe('getExecutionId', () => {
     it('should return execution ID when context is available', () => {
       const mockExecutionId = 'test-execution-id-123';
-      jest.spyOn(contextService, 'getExecutionId').mockReturnValue(mockExecutionId);
+      jest
+        .spyOn(contextService, 'getExecutionId')
+        .mockReturnValue(mockExecutionId);
 
       const result = controller.getExecutionId();
 
@@ -45,8 +47,9 @@ describe('AppController', () => {
     it('should return different execution ID for different calls', () => {
       const mockExecutionId1 = 'test-execution-id-1';
       const mockExecutionId2 = 'test-execution-id-2';
-      
-      jest.spyOn(contextService, 'getExecutionId')
+
+      jest
+        .spyOn(contextService, 'getExecutionId')
         .mockReturnValueOnce(mockExecutionId1)
         .mockReturnValueOnce(mockExecutionId2);
 
@@ -80,7 +83,9 @@ describe('AppController', () => {
 
     it('should return execution ID with correct structure', () => {
       const mockExecutionId = 'valid-uuid-12345-67890';
-      jest.spyOn(contextService, 'getExecutionId').mockReturnValue(mockExecutionId);
+      jest
+        .spyOn(contextService, 'getExecutionId')
+        .mockReturnValue(mockExecutionId);
 
       const result = controller.getExecutionId();
 
@@ -91,11 +96,15 @@ describe('AppController', () => {
 
     it('should handle UUID v4 format execution IDs', () => {
       const mockExecutionId = '550e8400-e29b-41d4-a716-446655440000';
-      jest.spyOn(contextService, 'getExecutionId').mockReturnValue(mockExecutionId);
+      jest
+        .spyOn(contextService, 'getExecutionId')
+        .mockReturnValue(mockExecutionId);
 
       const result = controller.getExecutionId();
 
-      expect(result.executionId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+      expect(result.executionId).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+      );
     });
   });
 
@@ -113,10 +122,12 @@ describe('AppController', () => {
 
     it('should handle multiple error scenarios consistently', () => {
       const errorScenarios = [undefined, null];
-      
+
       errorScenarios.forEach(scenario => {
-        jest.spyOn(contextService, 'getExecutionId').mockReturnValue(scenario as any);
-        
+        jest
+          .spyOn(contextService, 'getExecutionId')
+          .mockReturnValue(scenario as any);
+
         expect(() => {
           controller.getExecutionId();
         }).toThrow('Execution ID not found in context');
@@ -127,7 +138,8 @@ describe('AppController', () => {
   describe('integration with ContextService', () => {
     it('should call ContextService.getExecutionId exactly once per request', () => {
       const mockExecutionId = 'test-execution-id-integration';
-      const getExecutionIdSpy = jest.spyOn(contextService, 'getExecutionId')
+      const getExecutionIdSpy = jest
+        .spyOn(contextService, 'getExecutionId')
         .mockReturnValue(mockExecutionId);
 
       controller.getExecutionId();
@@ -138,7 +150,8 @@ describe('AppController', () => {
 
     it('should not call ContextService methods multiple times', () => {
       const mockExecutionId = 'test-execution-id-no-multiple-calls';
-      const getExecutionIdSpy = jest.spyOn(contextService, 'getExecutionId')
+      const getExecutionIdSpy = jest
+        .spyOn(contextService, 'getExecutionId')
         .mockReturnValue(mockExecutionId);
 
       controller.getExecutionId();
@@ -150,7 +163,9 @@ describe('AppController', () => {
   describe('response format', () => {
     it('should return object with executionId property', () => {
       const mockExecutionId = 'test-execution-id-format';
-      jest.spyOn(contextService, 'getExecutionId').mockReturnValue(mockExecutionId);
+      jest
+        .spyOn(contextService, 'getExecutionId')
+        .mockReturnValue(mockExecutionId);
 
       const result = controller.getExecutionId();
 
@@ -160,16 +175,16 @@ describe('AppController', () => {
 
     it('should maintain response structure consistency', () => {
       const testIds = ['id-1', 'id-2', 'id-3'];
-      
+
       testIds.forEach(testId => {
         jest.spyOn(contextService, 'getExecutionId').mockReturnValue(testId);
-        
+
         const result = controller.getExecutionId();
-        
+
         expect(result).toHaveProperty('executionId');
         expect(result.executionId).toBe(testId);
         expect(Object.keys(result)).toHaveLength(1);
       });
     });
   });
-}); 
+});

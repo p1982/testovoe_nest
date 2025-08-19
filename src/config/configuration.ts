@@ -12,7 +12,7 @@ export default () => ({
     })(),
     environment: process.env.NODE_ENV || 'development',
   },
-  
+
   // Конфігурація логування
   logging: {
     level: (() => {
@@ -20,7 +20,7 @@ export default () => ({
       return level && level.trim() !== '' ? level : 'info';
     })(),
   },
-  
+
   // Конфігурація cron завдань
   cron: {
     enabled: process.env.CRON_ENABLED === 'true',
@@ -29,7 +29,7 @@ export default () => ({
       return isNaN(interval) ? 30 : interval;
     })(),
   },
-  
+
   // Конфігурація контексту
   context: {
     timeout: (() => {
@@ -37,4 +37,4 @@ export default () => ({
       return isNaN(timeout) ? 30000 : timeout;
     })(),
   },
-}); 
+});

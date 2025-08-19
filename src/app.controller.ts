@@ -17,11 +17,11 @@ export class AppController {
   @Get()
   getExecutionId(): { executionId: string } {
     const executionId = this.contextService.getExecutionId();
-    
+
     if (!executionId) {
       throw new Error('Execution ID not found in context');
     }
-    
+
     return { executionId };
   }
-} 
+}

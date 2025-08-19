@@ -19,8 +19,6 @@ export class AppModule implements NestModule {
    * ContextMiddleware автоматично створює контекст для кожного запиту
    */
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(ContextMiddleware)
-      .forRoutes('*');
+    consumer.apply(ContextMiddleware).forRoutes('*');
   }
-} 
+}

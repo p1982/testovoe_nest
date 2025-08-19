@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { CronService } from './cron.service';
 import { ContextService } from '../context/context.service';
@@ -7,7 +6,7 @@ import { RequestContext } from '../context/context.interface';
 
 // Mock the uuid module
 jest.mock('uuid', () => ({
-  v4: jest.fn(() => 'test-uuid-12345')
+  v4: jest.fn(() => 'test-uuid-12345'),
 }));
 
 describe('CronService', () => {
@@ -58,18 +57,22 @@ describe('CronService', () => {
       });
 
       // Mock context service
-      jest.spyOn(contextService, 'runWithContext').mockImplementation((context, fn) => {
-        expect(context.executionId).toBe('test-uuid-12345');
-        return fn();
-      });
+      jest
+        .spyOn(contextService, 'runWithContext')
+        .mockImplementation((context, fn) => {
+          expect(context.executionId).toBe('test-uuid-12345');
+          return fn();
+        });
 
-      jest.spyOn(contextService, 'getExecutionId').mockReturnValue('test-uuid-12345');
+      jest
+        .spyOn(contextService, 'getExecutionId')
+        .mockReturnValue('test-uuid-12345');
 
       service.handleCronJob();
 
       expect(contextService.runWithContext).toHaveBeenCalledWith(
         { executionId: 'test-uuid-12345' },
-        expect.any(Function)
+        expect.any(Function),
       );
     });
 
@@ -106,8 +109,12 @@ describe('CronService', () => {
         return undefined;
       });
 
-      jest.spyOn(contextService, 'runWithContext').mockImplementation((context, fn) => fn());
-      jest.spyOn(contextService, 'getExecutionId').mockReturnValue('test-uuid-12345');
+      jest
+        .spyOn(contextService, 'runWithContext')
+        .mockImplementation((context, fn) => fn());
+      jest
+        .spyOn(contextService, 'getExecutionId')
+        .mockReturnValue('test-uuid-12345');
 
       service.handleCronJob();
 
@@ -122,8 +129,12 @@ describe('CronService', () => {
         return undefined;
       });
 
-      jest.spyOn(contextService, 'runWithContext').mockImplementation((context, fn) => fn());
-      jest.spyOn(contextService, 'getExecutionId').mockReturnValue('test-uuid-12345');
+      jest
+        .spyOn(contextService, 'runWithContext')
+        .mockImplementation((context, fn) => fn());
+      jest
+        .spyOn(contextService, 'getExecutionId')
+        .mockReturnValue('test-uuid-12345');
 
       service.handleCronJob();
 
@@ -139,16 +150,22 @@ describe('CronService', () => {
       });
 
       let contextDuringExecution: RequestContext | undefined;
-      jest.spyOn(contextService, 'runWithContext').mockImplementation((context, fn) => {
-        contextDuringExecution = context;
-        return fn();
-      });
+      jest
+        .spyOn(contextService, 'runWithContext')
+        .mockImplementation((context, fn) => {
+          contextDuringExecution = context;
+          return fn();
+        });
 
-      jest.spyOn(contextService, 'getExecutionId').mockReturnValue('test-uuid-12345');
+      jest
+        .spyOn(contextService, 'getExecutionId')
+        .mockReturnValue('test-uuid-12345');
 
       service.handleCronJob();
 
-      expect(contextDuringExecution).toEqual({ executionId: 'test-uuid-12345' });
+      expect(contextDuringExecution).toEqual({
+        executionId: 'test-uuid-12345',
+      });
     });
 
     it('should handle errors in context execution gracefully', () => {
@@ -172,14 +189,20 @@ describe('CronService', () => {
 
   describe('configuration integration', () => {
     it('should handle multiple configuration calls correctly', () => {
-      const getSpy = jest.spyOn(configService, 'get').mockImplementation((key: string) => {
-        if (key === 'cron.enabled') return true;
-        if (key === 'cron.interval') return 45;
-        return undefined;
-      });
+      const getSpy = jest
+        .spyOn(configService, 'get')
+        .mockImplementation((key: string) => {
+          if (key === 'cron.enabled') return true;
+          if (key === 'cron.interval') return 45;
+          return undefined;
+        });
 
-      jest.spyOn(contextService, 'runWithContext').mockImplementation((context, fn) => fn());
-      jest.spyOn(contextService, 'getExecutionId').mockReturnValue('test-uuid-12345');
+      jest
+        .spyOn(contextService, 'runWithContext')
+        .mockImplementation((context, fn) => fn());
+      jest
+        .spyOn(contextService, 'getExecutionId')
+        .mockReturnValue('test-uuid-12345');
 
       service.handleCronJob();
 
@@ -188,4 +211,4 @@ describe('CronService', () => {
       expect(getSpy).toHaveBeenNthCalledWith(2, 'cron.interval');
     });
   });
-}); 
+});

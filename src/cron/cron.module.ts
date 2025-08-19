@@ -11,4 +11,4 @@ import { ContextModule } from '../context/context.module';
   imports: [ScheduleModule.forRoot(), ContextModule],
   providers: [CronService],
 })
-export class CronModule {} 
+export class CronModule {}

@@ -57,22 +57,22 @@ describe('App Integration', () => {
   describe('Context Service Integration', () => {
     it('should create and retrieve context correctly', () => {
       const testContext = { executionId: 'test-integration-id' };
-      
+
       contextService.setContext(testContext);
       const retrievedContext = contextService.getContext();
-      
+
       expect(retrievedContext).toEqual(testContext);
     });
 
     it('should execute functions within context', () => {
       const testContext = { executionId: 'test-execution-id' };
       let capturedExecutionId: string | undefined;
-      
+
       const result = contextService.runWithContext(testContext, () => {
         capturedExecutionId = contextService.getExecutionId();
         return 'integration-test-result';
       });
-      
+
       expect(result).toBe('integration-test-result');
       expect(capturedExecutionId).toBe('test-execution-id');
     });
@@ -80,18 +80,18 @@ describe('App Integration', () => {
     it('should maintain context isolation between executions', () => {
       const context1 = { executionId: 'context-1' };
       const context2 = { executionId: 'context-2' };
-      
+
       let execution1Id: string | undefined;
       let execution2Id: string | undefined;
-      
+
       contextService.runWithContext(context1, () => {
         execution1Id = contextService.getExecutionId();
       });
-      
+
       contextService.runWithContext(context2, () => {
         execution2Id = contextService.getExecutionId();
       });
-      
+
       expect(execution1Id).toBe('context-1');
       expect(execution2Id).toBe('context-2');
     });
@@ -103,7 +103,7 @@ describe('App Integration', () => {
       const environment = configService.get<string>('app.environment');
       const cronEnabled = configService.get<boolean>('cron.enabled');
       const cronInterval = configService.get<number>('cron.interval');
-      
+
       expect(port).toBeDefined();
       expect(environment).toBeDefined();
       expect(cronEnabled).toBeDefined();
@@ -128,7 +128,7 @@ describe('App Integration', () => {
           timeout: configService.get<number>('context.timeout'),
         },
       };
-      
+
       expect(config.app).toHaveProperty('port');
       expect(config.app).toHaveProperty('environment');
       expect(config.app).toHaveProperty('name');
@@ -142,7 +142,7 @@ describe('App Integration', () => {
   describe('Cron Service Integration', () => {
     it('should respect cron.enabled configuration', () => {
       const cronEnabled = configService.get<boolean>('cron.enabled');
-      
+
       if (cronEnabled) {
         expect(cronService.handleCronJob).toBeDefined();
       }
@@ -151,7 +151,7 @@ describe('App Integration', () => {
     it('should have access to configuration service', () => {
       const cronEnabled = configService.get<boolean>('cron.enabled');
       const cronInterval = configService.get<number>('cron.interval');
-      
+
       expect(cronEnabled).toBeDefined();
       expect(cronInterval).toBeDefined();
     });
@@ -161,11 +161,11 @@ describe('App Integration', () => {
     it('should load environment variables correctly', () => {
       const nodeEnv = process.env.NODE_ENV;
       const port = process.env.PORT;
-      
+
       if (nodeEnv) {
         expect(configService.get('app.environment')).toBe(nodeEnv);
       }
-      
+
       if (port) {
         expect(configService.get('app.port')).toBe(parseInt(port, 10));
       }
@@ -174,14 +174,14 @@ describe('App Integration', () => {
     it('should provide fallback values for missing environment variables', () => {
       const originalPort = process.env.PORT;
       delete process.env.PORT;
-      
+
       const port = configService.get<number>('app.port');
       expect(port).toBe(3000); // Default value
-      
+
       // Restore original value
       if (originalPort) {
         process.env.PORT = originalPort;
       }
     });
   });
-}); 
+});

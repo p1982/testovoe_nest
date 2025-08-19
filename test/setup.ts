@@ -13,4 +13,4 @@ beforeAll(() => {
 afterAll(() => {
   // Cleanup global test environment
   process.env.NODE_ENV = 'development';
-}); 
+});

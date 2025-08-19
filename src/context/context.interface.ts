@@ -5,4 +5,4 @@
 export interface RequestContext {
   /** Унікальний ідентифікатор виконання запиту */
   executionId: string;
-} 
+}
